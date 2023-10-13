@@ -40,9 +40,9 @@ def demodulate(signal, times):
 
     other_filtered = signal_filtered*np.exp(-2j*np.pi*actual_freq*times)
     other = signal*np.exp(-2j*np.pi*actual_freq*times)
-    plt.plot(signal, times)
+    plt.plot(times, signal)
     plt.show()
-    plt.plot(other, times)
+    plt.plot(times, other)
     plt.show()
     return other, other_filtered
     #plt.plot(w, 20*np.log10(np.abs(h)))
@@ -72,13 +72,15 @@ SIGNAL_COL = "S21(dB)"
 REAL_COL = "S21(Real)"
 IMAG_COL = "S21(Imag)"
 
-real_tddata_file = "real_timedomaindata_Trace2.csv"
+datapath = "../data/"
+
+real_tddata_file = datapath + "real_timedomaindata_Trace2.csv"
 real_td_data = pd.read_csv(real_tddata_file)
 signal = real_td_data[REAL_COL].to_numpy()
 times = real_td_data[X_COL].to_numpy()
 #plt.plot(demodulate(signal, times))
 
-complex_tddata_file = "ComplexTrace2.csv"
+complex_tddata_file = datapath + "ComplexTrace.csv"
 complex_td_data = pd.read_csv(complex_tddata_file)
 complex_times = complex_td_data[X_COL].to_numpy()
 print(complex_times)
@@ -115,24 +117,34 @@ def weighted_avg_smoothing(signal, window = WINDOW_SIZE):
 def low_pass(signal): 
     pass 
 
-# plt.plot(complex_times[1000:], complex_signal[1000:])
-# plt.plot(complex_times[1000:], out_3[1000:])
-# plt.title("real part of signal before & after demodulation")
+plt.plot(complex_times[1000:], complex_signal[1000:])
+plt.plot(complex_times[1000:], out_3[1000:])
+plt.title("real part of signal before & after demodulation")
+plt.show()
 
 smoothed_out_3 = weighted_avg_smoothing(out_3)
-smoothed_out_3 = 20*np.log10(np.abs(smoothed_out_3))
-out_3 = 20*np.log10(np.abs(out_3))
+#smoothed_out_3 = 20*np.log10(np.abs(smoothed_out_3))
+#out_3 = 20*np.log10(np.abs(out_3))
 out_3_filtered = 20*np.log10(np.abs(out_3_filtered))
 
 
 #out_complex = 20*np.log10(np.abs(out_1 + 1j*out_2))
 
 
-plt.plot(complex_times[:-WINDOW_SIZE], out_3[:-WINDOW_SIZE])
+from ztransform import wavelet_denoising, to_log_mag
 
-plt.plot(complex_times[:-WINDOW_SIZE], smoothed_out_3)
-plt.title("filtered real signal")
+mean = np.mean(smoothed_out_3)
 
+even_more_smoothed_out_3 = wavelet_denoising(to_log_mag(smoothed_out_3) - mean , wavelet = "db4", level = 2)
+even_more_smoothed_out_3 += mean
+
+
+plt.plot(complex_times[:-WINDOW_SIZE], to_log_mag(out_3)[:-WINDOW_SIZE])
+
+plt.plot(complex_times[:9700], even_more_smoothed_out_3[:-WINDOW_SIZE])
+plt.title("filtered real signal -- db4 wavelet")
+plt.xlabel("Time (s)")
+plt.ylabel("S21 (dB)")
 
 print("test")
 plt.show()
